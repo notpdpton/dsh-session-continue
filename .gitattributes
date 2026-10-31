@@ -1,0 +1,7 @@
+# The source is UTF-8 with LF everywhere; a Windows checkout must not rewrite
+# line endings into the published history.
+* text=auto eol=lf
+*.png binary
+*.jpg binary
+*.ico binary
+*.woff2 binary

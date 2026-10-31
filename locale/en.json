@@ -1,0 +1,6 @@
+{
+  "meta": {
+    "title": "Session recovery",
+    "description": "Shows a notice and a Continue button above the composer when a session did not finish cleanly."
+  }
+}

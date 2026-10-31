@@ -1,0 +1,14 @@
+# Bundle self-activation patch.
+#
+# This package is a single, self-contained plugin: one package with a Host half
+# (index.js) and a browser half (client.js). When the profile mounts this row,
+# the Loader imports the package entry, then reads `dsh.client` from the same
+# package.json to find the browser module.
+#
+# One row, naming the PACKAGE ROOT and nothing else. A row that names a subpath
+# (e.g. dsh-session-continue/client) never reaches the browser-module scan at
+# all — dsh-client-modules requires an exact package specifier there — so the
+# Host half would load with no UI attached.
+- insert:
+    - id: dsh-session-continue
+      name: 'dsh-session-continue'
