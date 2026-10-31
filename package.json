@@ -1,7 +1,10 @@
 {
   "name": "dsh-session-continue",
   "version": "0.1.0",
-  "private": true,
+  "publishConfig": {
+    "access": "public",
+    "registry": "https://registry.npmjs.org/"
+  },
   "type": "module",
   "description": "会话非正常结束时，在输入框上方显示提示与「继续」按钮。",
   "icon": "./icon.svg",

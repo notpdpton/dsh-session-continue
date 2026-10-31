@@ -53,10 +53,21 @@ dock 之上）。收起时只有一行：状态点、标题「会话未正常结
 
 ## 安装
 
+### 从 npm 安装
+
+在 DSH 的「插件」页选择「添加插件」，填入包名 `dsh-session-continue`，装好后在
+bundle 列表里确认 `dsh-session-continue` 已启用。
+
+命令行等价写法：
+
+```bash
+npm install dsh-session-continue
+```
+
 ### 从 Git 仓库安装
 
-在 DSH 的 Plugins 页选择安装，填入仓库地址，装好后在 bundle 列表里选择
-`dsh-session-continue`。
+同样在「插件」页选择安装，填入本仓库的地址（`<主机>/<账号>/dsh-session-continue`）。
+仓库地址不写进包内文本：一个包不该带着某个账号名四处走。
 
 ### 本地开发安装
 

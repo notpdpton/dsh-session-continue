@@ -48,7 +48,12 @@ function textFiles(dir, prefix = '') {
 
 console.log('-- manifest')
 check('package is named dsh-session-continue', pkg.name === 'dsh-session-continue', pkg.name)
-check('package is private', pkg.private === true, String(pkg.private))
+// This package is published to the public registry, so `private` must be absent —
+// npm refuses to publish a private package, and the flag left behind reads as
+// "cannot be installed" to every consumer. Publishing facts live in publishConfig.
+check('package is not private', pkg.private !== true, String(pkg.private))
+check('the package publishes publicly', pkg.publishConfig?.access === 'public', JSON.stringify(pkg.publishConfig))
+check('the package publishes to the public registry', pkg.publishConfig?.registry === 'https://registry.npmjs.org/', pkg.publishConfig?.registry)
 check('version is semver', /^\d+\.\d+\.\d+$/.test(pkg.version), pkg.version)
 check('type is module', pkg.type === 'module', pkg.type)
 check('main points at index.js', pkg.main === 'index.js', pkg.main)
