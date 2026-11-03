@@ -1,6 +1,6 @@
 {
   "name": "dsh-session-continue",
-  "version": "0.1.0",
+  "version": "0.1.1",
   "publishConfig": {
     "access": "public",
     "registry": "https://registry.npmjs.org/"
@@ -17,6 +17,9 @@
     "continue"
   ],
   "license": "MIT",
+  "engines": {
+    "dsh": "^0.2.1-rc.5"
+  },
   "main": "index.js",
   "exports": {
     ".": "./index.js",

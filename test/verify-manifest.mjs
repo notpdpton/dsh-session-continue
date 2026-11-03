@@ -9,7 +9,10 @@
  * usage: node verify-manifest.mjs
  */
 import { existsSync, readdirSync, readFileSync, statSync } from 'node:fs'
+import { createRequire } from 'node:module'
+import path from 'node:path'
 import { fileURLToPath } from 'node:url'
+import { satisfiesCaret } from './semver-caret.mjs'
 
 const root = new URL('..', import.meta.url)
 const pkg = JSON.parse(readFileSync(new URL('package.json', root), 'utf8'))
@@ -61,6 +64,77 @@ check('license declared', typeof pkg.license === 'string' && pkg.license.length 
 check('description declared', typeof pkg.description === 'string' && pkg.description.length > 0, pkg.description)
 check('icon declared', pkg.icon === './icon.svg', pkg.icon)
 check('bundle patch declared', pkg.dsh?.bundle?.patch === './cordis.patch.yml', pkg.dsh?.bundle?.patch)
+
+console.log('\n-- the DSH requirement the Host enforces')
+// App-boot's compatibility gate reads \`engines.dsh\` (or, when absent, every
+// \`peerDependencies\` range on \`@deepseek-ai/dsh*\`) BEFORE importing the plugin, and
+// denies an unsatisfied row. A manifest that declares neither imposes no constraint at
+// all — it is admitted on every host, including ones this plugin was never run on.
+{
+  const range = pkg.engines?.dsh
+  check('the manifest declares the DSH range it was verified on', typeof range === 'string' && range.length > 0, String(range))
+  // One shape only: a shape this repository cannot evaluate is a requirement nobody
+  // can check, so the test refuses it instead of guessing.
+  check('the declared range is a single caret range', typeof range === 'string' && /^\^\d+\.\d+\.\d+(?:-[0-9A-Za-z.-]+)?$/.test(range), String(range))
+  // The floor is the host this plugin was actually built and verified against. If it
+  // ever drifts below that, the declaration starts claiming hosts nobody tested.
+  check('the declared floor is the verified host', range === '^0.2.1-rc.5', String(range))
+  // The ceilings that matter: the installed host and the current release line must be
+  // admitted, while a host older than the verified floor must not be.
+  const evaluable = satisfiesCaret('0.0.0', range ?? '') !== null
+  if (!evaluable) {
+    console.log('  --   range not evaluable here; skipped the per-version expectations')
+  } else {
+    for (const [version, expected] of [
+      ['0.2.1-rc.4', false],
+      ['0.2.1-rc.5', true],
+      ['0.2.2-alpha.2', true],
+      ['0.2.2-alpha.3', true],
+      ['0.2.2', true],
+      ['0.3.0', false],
+      ['0.3.0-rc.1', false],
+      ['0.1.7', false],
+    ]) {
+      const verdict = expected ? 'admits' : 'refuses'
+      check(range + ' ' + verdict + ' ' + version, satisfiesCaret(version, range ?? '') === expected, String(satisfiesCaret(version, range ?? '')))
+    }
+  }
+  // Cross-check the local evaluator against npm's real semver whenever it resolves, so
+  // a hand-written parser cannot quietly disagree with the gate it stands in for.
+  let semver
+  const require = createRequire(import.meta.url)
+  const nodeDir = path.dirname(process.execPath)
+  // npm bundles semver next to the node binary that runs it. Both layouts that exist
+  // in the wild are tried, and neither is written down as a literal path: the only
+  // input is where node itself lives.
+  for (const candidate of [
+    'semver',
+    path.join(nodeDir, 'node_modules', 'npm', 'node_modules', 'semver'),
+    path.join(nodeDir, '..', 'lib', 'node_modules', 'npm', 'node_modules', 'semver'),
+  ]) {
+    try {
+      semver = require(candidate)
+      break
+    } catch {
+      semver = undefined
+    }
+  }
+  if (semver === undefined) {
+    console.log('  --   semver not resolvable here; the checked-in expectations above stand alone')
+  } else if (satisfiesCaret('0.0.0', range ?? '') === null) {
+    // The range is not the supported shape, so there is nothing to agree about; the
+    // shape assertion above already failed and named the reason.
+    console.log('  --   range not evaluable here; skipped the semver cross-check')
+  } else {
+    const probes = ['0.2.1-rc.4', '0.2.1-rc.5', '0.2.2-alpha.3', '0.2.2', '0.2.9', '0.3.0', '0.3.0-rc.1', '0.2.0', '1.0.0']
+    const disagreed = probes.filter((v) => satisfiesCaret(v, range ?? '') !== semver.satisfies(v, range ?? '', { includePrerelease: true }))
+    check('the local range evaluator agrees with semver', disagreed.length === 0, disagreed.join(', '))
+  }
+  // A peer range would be a SECOND opinion the gate reads only when \`engines.dsh\` is
+  // absent. Declaring both makes the reader's precedence, not the author's intent, the
+  // deciding factor.
+  check('the manifest declares no competing peer range', pkg.peerDependencies === undefined, JSON.stringify(pkg.peerDependencies))
+}
 
 console.log('\n-- exports map')
 // An `exports` map is a whitelist: a path the Host resolves but the map omits is

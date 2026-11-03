@@ -10,8 +10,9 @@
 | 包名 | `dsh-session-continue` |
 | 插件名（诊断用） | `dsh-session-continue` |
 | 投影键 | `sessionContinueInterruption` |
-| 版本 | `0.1.0` |
+| 版本 | `0.1.1` |
 | 依赖 | 无 |
+| 宿主范围 | `^0.2.1-rc.5`（`engines.dsh`） |
 
 ## 解决什么问题
 
@@ -63,6 +64,22 @@ bundle 列表里确认 `dsh-session-continue` 已启用。
 ```bash
 npm install dsh-session-continue
 ```
+
+### 宿主版本要求
+
+manifest 声明了 `engines.dsh: ^0.2.1-rc.5`。宿主的兼容闸门在**导入任何插件代码之前**
+读这个字段，落在范围外就拒绝装载并报出未满足的要求：
+
+| 宿主 | 结果 |
+| --- | --- |
+| `0.2.1-rc.5` | 放行（这个插件就是在它上面开发与验证的） |
+| `0.2.2-alpha.2` / `0.2.2-alpha.3` / `0.2.2` | 放行 |
+| `0.2.1-rc.4` 及更早 | 拒绝 |
+| `0.3.0` 及更新 | 拒绝 |
+
+范围是**上界也管用**的：一个没在这版宿主上跑过的将来版本，不该被默默放进来。真要
+在范围外使用，宿主的版本豁免（`compatibility.json` / `dsh plugin allow-version`）是
+显式的、按「包@版本 × 宿主版本」逐一授予的后门，不走这条默认路径。
 
 ### 从 Git 仓库安装
 
